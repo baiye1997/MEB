@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">MEB DSH 工程造价工作台</title>
+  <desc id="desc">深色桌面工作台示意图，左侧是项目导航和台账，右侧是三维模型与核对状态。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1120"/>
+      <stop offset="1" stop-color="#152d4d"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#1d3555"/>
+      <stop offset="1" stop-color="#12253e"/>
+    </linearGradient>
+    <linearGradient id="model" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#5bb4ff"/>
+      <stop offset="1" stop-color="#2865b0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#000" flood-opacity=".35"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1380" cy="90" r="190" fill="#3989d0" opacity=".12"/>
+  <circle cx="90" cy="840" r="220" fill="#79c7ff" opacity=".08"/>
+  <g filter="url(#shadow)">
+    <rect x="80" y="78" width="1440" height="744" rx="30" fill="#0f1d30" stroke="#355578" stroke-width="2"/>
+    <rect x="80" y="78" width="1440" height="78" rx="30" fill="#172a44"/>
+    <path d="M80 126h1440v30H80z" fill="#172a44"/>
+    <circle cx="124" cy="117" r="9" fill="#ff8078"/><circle cx="154" cy="117" r="9" fill="#f8c66d"/><circle cx="184" cy="117" r="9" fill="#69d69d"/>
+    <text x="236" y="126" fill="#d8e8fa" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="24" font-weight="700">MEB · 工程造价工作台</text>
+    <text x="1324" y="124" fill="#8eabc9" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="16">DSH Desktop</text>
+
+    <rect x="80" y="156" width="300" height="666" fill="#12253e"/>
+    <text x="122" y="214" fill="#e6f2ff" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="18" font-weight="700">示例校园</text>
+    <text x="122" y="243" fill="#86a5c5" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="14">项目上下文 · 已保存</text>
+    <rect x="110" y="282" width="238" height="48" rx="12" fill="#2865b0"/>
+    <text x="138" y="313" fill="#fff" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="16">▦　MEB 工作台</text>
+    <g fill="#9cb6d1" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="15">
+      <text x="138" y="380">收方台账</text><text x="138" y="426">签证变更</text><text x="138" y="472">计算台</text><text x="138" y="518">模型配置</text><text x="138" y="564">附件库</text><text x="138" y="610">备份与设置</text>
+    </g>
+    <rect x="110" y="682" width="238" height="92" rx="14" fill="#1a304c" stroke="#2b4968"/>
+    <text x="132" y="716" fill="#dcecff" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="14" font-weight="700">数据边界</text>
+    <text x="132" y="744" fill="#8da9c4" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="12">本机保存 · 显式保存</text>
+    <text x="132" y="764" fill="#8da9c4" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="12">建议可审阅 · 可撤销</text>
+
+    <rect x="380" y="156" width="1140" height="666" fill="#f5f8fc"/>
+    <rect x="428" y="194" width="1044" height="72" rx="16" fill="#fff" stroke="#d9e3ef"/>
+    <text x="460" y="229" fill="#162b43" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="22" font-weight="700">收方台账</text>
+    <text x="460" y="252" fill="#7890a8" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="13">当前项目 · 84 条记录 · 3 条待核对</text>
+    <rect x="1260" y="212" width="176" height="38" rx="10" fill="#2865b0"/><text x="1297" y="237" fill="#fff" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="13">保存更改</text>
+
+    <rect x="428" y="292" width="650" height="470" rx="18" fill="#fff" stroke="#d9e3ef"/>
+    <g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+      <text x="458" y="330" fill="#7289a2" font-size="13">编号</text><text x="570" y="330" fill="#7289a2" font-size="13">部位</text><text x="760" y="330" fill="#7289a2" font-size="13">内容</text><text x="972" y="330" fill="#7289a2" font-size="13">状态</text>
+      <g font-size="14"><text x="458" y="374" fill="#213a56">SF-001</text><text x="570" y="374" fill="#213a56">示例楼栋 A · 2F</text><text x="760" y="374" fill="#213a56">管道安装</text><rect x="958" y="354" width="78" height="28" rx="14" fill="#e6f6ed"/><text x="977" y="373" fill="#2a8754" font-size="12">已记录</text>
+      <text x="458" y="430" fill="#213a56">SF-002</text><text x="570" y="430" fill="#213a56">示例楼栋 B · 1F</text><text x="760" y="430" fill="#213a56">风管收方</text><rect x="958" y="410" width="78" height="28" rx="14" fill="#fff3dc"/><text x="977" y="429" fill="#a36b13" font-size="12">待核对</text>
+      <text x="458" y="486" fill="#213a56">SF-003</text><text x="570" y="486" fill="#213a56">原有楼栋 · 屋面</text><text x="760" y="486" fill="#213a56">保温工程</text><rect x="958" y="466" width="78" height="28" rx="14" fill="#e6f6ed"/><text x="977" y="485" fill="#2a8754" font-size="12">已记录</text></g>
+      <path d="M454 520h598M454 575h598M454 630h598M454 685h598" stroke="#e5edf5"/>
+      <text x="458" y="720" fill="#8aa0b7" font-size="12">数量、单位、来源和备注保留在同一项目上下文中</text>
+    </g>
+
+    <rect x="1100" y="292" width="372" height="470" rx="18" fill="url(#panel)"/>
+    <text x="1132" y="330" fill="#edf6ff" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="16" font-weight="700">空间参考 · 3 栋</text>
+    <text x="1132" y="355" fill="#8eabc9" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="12">合成预览 · 需核对 CAD 证据</text>
+    <path d="M1145 650 1254 585 1416 634 1300 706Z" fill="#102239" stroke="#5a89b6" stroke-width="2"/>
+    <path d="m1190 614 52-100 70 25 7 91z" fill="url(#model)" stroke="#a9dcff" stroke-width="2"/>
+    <path d="m1242 514 45-26 70 25-45 26z" fill="#9bddff" opacity=".85"/>
+    <path d="m1331 626 45-84 59 22 4 77z" fill="#3b79b5" stroke="#a9dcff" stroke-width="2"/>
+    <path d="m1376 542 34-20 59 22-35 20z" fill="#82c7f4"/>
+    <path d="m1260 664 64-48 61 19-65 50z" fill="#6bbaf2" opacity=".75"/>
+    <g fill="#9fc7ea" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="12"><text x="1150" y="716">DWG 候选轮廓审阅</text><text x="1150" y="739">楼栋、楼层与高度人工确认</text></g>
+  </g>
+</svg>
