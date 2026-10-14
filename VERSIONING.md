@@ -1,29 +1,18 @@
-# 更新与回退
+# 版本与回退
 
-本仓库为私人代码仓库。首个基线标签：`baseline-2026-09-22`。
+## 版本对应
 
-## 日常更新
+npm 包使用 `meb-workbench`，GitHub 仓库使用 `MEB-DSH`。正式发布以 npm 版本号与 GitHub Release 标签对应，例如 `0.1.2` 对应 `v0.1.2`。最新版本与更新内容见 [Releases](https://github.com/baiye1997/MEB-DSH/releases)。
 
-在 MEB 根目录先查看改动并运行测试，只提交本次修改的文件。
+## 升级与回退
 
-```sh
-git status
-npm test --prefix workbench
-npm run build --prefix workbench
-git add <本次修改的文件>
-git diff --cached --stat
-git commit -m "说明本次改动"
-git push origin main
-```
+1. 在工作台「备份与设置」导出完整备份。
+2. 按 DSH 当前界面的提示卸载已安装版本。
+3. 在「添加插件」中输入目标版本，例如 `meb-workbench@0.1.1`；也可使用该版本 Release 附带的 `.tgz` 文件。
+4. 按 DSH 提示刷新或重启，核对项目数据后继续使用。
 
-更新另一台机器时，先提交或妥善保留本地改动，再 `git pull --ff-only`，按根 README 安装依赖并构建。构建会触发本地 DSH 插件热更新，先保存页面中的未保存输入。
+插件版本只决定代码，业务数据由 DSH 保存。旧版本可能不支持较新版本保存的数据；需要恢复备份时，先备份当前数据，再在工作台中导入目标备份。
 
-## 安全回退
+## 源码开发
 
-先保存工作台业务数据并导出完整备份，再确保 `git status` 干净。
-
-- 撤销某次提交：`git revert <提交号>`，检查与构建通过后 `git push`。保留后续历史，不强推。
-- 只查看今晚基线：`git worktree add --detach ../MEB-baseline baseline-2026-09-22`，在独立目录检查，不改当前工作目录。
-- 定位版本：`git log --oneline --decorate`、`git tag`。
-
-Git 回退只影响代码，不回退已保存的业务数据；旧代码可能不支持新数据。业务数据应使用工作台「备份与设置 → 导出完整备份」，恢复前再备份当前数据。备份留在本机或个人备份盘，不提交到代码仓库。
+开发环境的构建和检查方法见 [开发指南](CONTRIBUTING.md)。需要核对历史版本时，使用 Release 对应的 Git 标签。撤销已公开提交可使用 `git revert` 保留后续历史。
