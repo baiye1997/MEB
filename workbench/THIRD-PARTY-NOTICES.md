@@ -37,3 +37,13 @@ React and React DOM are host-provided MIT-licensed peers. `esbuild` is a MIT-lic
 ## Transitive dependencies
 
 The npm lockfile records exact transitive versions. npm packages retain their own license files under `node_modules`; published MEB artifacts do not remove those package notices. Run `npm ci` before inspecting a dependency's full license text.
+
+## Optional external CAD tools
+
+These tools are installed separately by users and are not included in the npm tarball:
+
+| Component | License | Source |
+| --- | --- | --- |
+| LibreDWG (`dwg2dxf`) | GPL-3.0-or-later | [GNU LibreDWG](https://www.gnu.org/software/libredwg/) |
+| `ezdxf` | MIT | [ezdxf](https://github.com/mozman/ezdxf) |
+| Python | Python Software Foundation License | [Python license](https://docs.python.org/3/license.html) |

@@ -38,8 +38,8 @@
       <text x="138" y="380">收方台账</text><text x="138" y="426">签证变更</text><text x="138" y="472">计算台</text><text x="138" y="518">模型配置</text><text x="138" y="564">附件库</text><text x="138" y="610">备份与设置</text>
     </g>
     <rect x="110" y="682" width="238" height="92" rx="14" fill="#1a304c" stroke="#2b4968"/>
-    <text x="132" y="716" fill="#dcecff" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="14" font-weight="700">数据边界</text>
-    <text x="132" y="744" fill="#8da9c4" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="12">本机保存 · 显式保存</text>
+    <text x="132" y="716" fill="#dcecff" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="14" font-weight="700">项目资料</text>
+    <text x="132" y="744" fill="#8da9c4" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="12">本机保存 · 随时备份</text>
     <text x="132" y="764" fill="#8da9c4" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" font-size="12">建议可审阅 · 可撤销</text>
 
     <rect x="380" y="156" width="1140" height="666" fill="#f5f8fc"/>

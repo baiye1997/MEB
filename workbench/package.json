@@ -1,16 +1,16 @@
 {
   "name": "meb-workbench",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MEB construction-cost workbench plugin for DeepSeek Harness",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/baiye1997/MEB.git",
+    "url": "git+https://github.com/baiye1997/MEB-DSH.git",
     "directory": "workbench"
   },
-  "homepage": "https://github.com/baiye1997/MEB/tree/main/workbench",
+  "homepage": "https://github.com/baiye1997/MEB-DSH/tree/main/workbench",
   "bugs": {
-    "url": "https://github.com/baiye1997/MEB/issues"
+    "url": "https://github.com/baiye1997/MEB-DSH/issues"
   },
   "keywords": ["dsh", "dsh-plugin", "construction", "cost-estimation"],
   "engines": {
