@@ -1,0 +1,11 @@
+{
+  "site": [[-60,-42],[58,-42],[70,48],[-48,60]],
+  "buildings": [
+    {"id":"E","name":"既有楼栋","polygon":[[-38,-24],[-6,-24],[-6,10],[-38,10]],"height":12,"floors":3,"verified":false},
+    {"id":"A","name":"示例楼栋 A","polygon":[[5,-24],[36,-24],[36,10],[5,10]],"height":16,"floors":4,"verified":false},
+    {"id":"B","name":"示例楼栋 B","polygon":[[5,20],[32,20],[32,44],[5,44]],"height":10,"floors":2,"verified":false}
+  ],
+  "center":[5,5],
+  "span":150,
+  "note":"合成示例模型；不包含真实项目、CAD 或测量数据。"
+}
