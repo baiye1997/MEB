@@ -1,6 +1,6 @@
 {
   "name": "meb-workbench",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "MEB construction-cost workbench plugin for DeepSeek Harness",
   "license": "MIT",
   "repository": {

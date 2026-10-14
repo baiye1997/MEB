@@ -14,10 +14,11 @@
 </p>
 
 <p>
-  <a href="https://www.npmjs.com/package/meb-workbench">安装包</a> ·
+  <a href="https://github.com/baiye1997/MEB-DSH#安装">安装</a> ·
+  <a href="https://github.com/baiye1997/MEB-DSH#快速上手">快速上手</a> ·
+  <a href="https://github.com/baiye1997/MEB-DSH/blob/main/docs/usage.md">使用手册</a> ·
   <a href="https://github.com/baiye1997/MEB-DSH/releases">版本下载</a> ·
-  <a href="https://github.com/baiye1997/MEB-DSH/issues">问题反馈</a> ·
-  <a href="https://github.com/baiye1997/MEB-DSH/blob/main/CONTRIBUTING.md">参与开发</a>
+  <a href="https://github.com/baiye1997/MEB-DSH/issues">问题反馈</a>
 </p>
 
 </div>
@@ -33,43 +34,67 @@ MEB 是运行在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 | 工作 | 功能 |
 | --- | --- |
 | 项目台账 | 收方、签证变更、产值、合同与材料价格管理 |
-| 表格处理 | Excel 粘贴；Excel（XLSX / XLS）、CSV 和 TSV 文件导入导出 |
-| 工程计算 | 电缆、母线槽、支吊架、保温、风管与自定义规则；保留参数、公式和入账快照 |
+| 表格处理 | Excel 区域粘贴；导入 XLSX / XLS / CSV / TSV，按范围导出 XLSX |
+| 工程计算 | 电缆、母线槽、支吊架、保温、风管与自定义规则；核对参数、公式与计算过程 |
 | 图纸核对 | DWG 候选轮廓审阅、楼栋配置、拆分与三维体量预览 |
 | 项目助手 | 按当前项目查询资料、核对证据、预览和采用修改建议 |
 | 数据管理 | 保存、撤销、备份恢复，以及可选的 WebDAV 同步 |
 
 ## 安装
 
-在 DSH Desktop 打开「添加插件」，输入以下包名：
+需要先安装 DSH Desktop。默认没有插件市场也可以安装 MEB；使用发布包无需注册 npm 账号或自行构建。
+
+1. 打开 DSH Desktop 的「添加插件」。
+2. 输入下面的 npm 包名，确认来源与版本。
+3. 点击「安装」，按 DSH 提示刷新或重启。
+4. 从左侧打开 **MEB 工作台**。
 
 ```text
 meb-workbench
 ```
 
-确认来源和版本后点击「安装」，按 DSH 提示刷新或重启，然后从左侧打开 **MEB 工作台**。无需先安装插件市场，也无需注册 npm 账号。
-
 <p align="center">
   <img src="https://raw.githubusercontent.com/baiye1997/MEB-DSH/main/docs/images/dsh-install.svg" alt="安装步骤：打开添加插件、输入 meb-workbench、安装并打开工作台" width="100%">
 </p>
 
-若镜像源暂未同步新版本，可在「安装源」中选择 npm 官方源。需要指定版本时，在包名后加版本号，例如 `meb-workbench@0.1.2`。
+镜像源暂未同步时，可在「安装源」中选择 npm 官方源。需要固定版本时，输入 `meb-workbench@0.1.3`，版本列表见 [Releases](https://github.com/baiye1997/MEB-DSH/releases)。
 
-### 下载后安装
+<details>
+<summary>其他安装来源：GitHub、下载包、本地源码</summary>
 
-在 [Releases](https://github.com/baiye1997/MEB-DSH/releases) 下载 `meb-workbench-版本号.tgz`，将下载文件的完整本地路径填入「添加插件」。安装时仍需联网获取 JavaScript 依赖。
+**GitHub 源码**：在「添加插件」中输入：
 
-### 升级
+```text
+github:baiye1997/MEB-DSH#main&path:workbench
+```
 
-按 DSH 当前界面的提示卸载旧版并安装新版。升级前可在「备份与设置」导出备份。
+`main` 指定分支，`path:workbench` 指定仓库中的插件目录。这是 [pnpm 支持的 Git 子目录写法](https://pnpm.io/package-sources#install-from-a-git-repository-combining-different-parameters)。若当前 DSH 版本解析失败，使用 npm 包或本地构建。
 
-## DWG 识图
+**下载包**：在 [Releases](https://github.com/baiye1997/MEB-DSH/releases) 下载 `meb-workbench-版本号.tgz`，将下载文件的完整本地路径填入「添加插件」。安装仍需联网获取 JavaScript 依赖。
 
-台账和工程计算安装后即可使用。DWG 识图还需要本机的 **LibreDWG（dwg2dxf）** 与 **Python + ezdxf**。
+**本地源码**：按 [开发指南](https://github.com/baiye1997/MEB-DSH/blob/main/CONTRIBUTING.md#本地构建) 安装依赖并构建，再将本地 `workbench` 目录的完整路径填入「添加插件」。不要填仓库根目录。
 
-缺少依赖时，工作台会显示安装说明。插件不会自动修改系统环境。安装步骤见 [CAD 环境配置](https://github.com/baiye1997/MEB-DSH/blob/main/docs/cad-setup.md)。
+</details>
 
-导入图纸后，逐个核对候选轮廓、图纸单位、楼栋身份、坐标与层高，再生成模型并保存。模型用于体量预览；二维图纸中的代理对象、绑定图和缺失信息仍可能影响识别结果。
+升级或回退前，先在「备份与设置」导出备份，再按 DSH 提示卸载旧版并安装目标版本。详见 [版本与回退](https://github.com/baiye1997/MEB-DSH/blob/main/VERSIONING.md)。
+
+## 快速上手
+
+1. **新建项目**：在项目看板点击「新建项目」，填入名称后进入。没有图纸或三维模型也能开始记录。
+2. **填写台账**：从「工作台」选择收方、签证变更、产值或合同，点击「添加行」。可逐格编辑，也可从 Excel 复制区域后粘贴到目标单元格。
+3. **导入已有表格**：打开「表格设置 → 导入 Excel」，选择工作表、核对字段映射和预览，再追加到当前台账。
+4. **核对计算与建议**：在「计算台」填写参数并查看结果、计算过程；使用项目助手前，核对当前项目及准备发送的记录范围。
+5. **保存结果**：点击「保存更改」。入账、采用助手建议、恢复备份都会先进入编辑区，可核对、撤销后再保存。
+
+需要按筛选范围导出、查看计算依据、关联附件或设置同步，见 [使用手册](https://github.com/baiye1997/MEB-DSH/blob/main/docs/usage.md)。
+
+## DWG 识图（可选）
+
+收方、签证、产值等业务记录和工程计算，安装插件后即可使用。**只有解析 DWG 图纸时，才需另外安装 LibreDWG（dwg2dxf）与 Python + ezdxf。**
+
+缺少工具时，工作台会提示配置环境；插件不会自动修改系统环境。具体命令与检查方法见 [CAD 环境配置](https://github.com/baiye1997/MEB-DSH/blob/main/docs/cad-setup.md)。
+
+在项目「模型配置」导入图纸后，核对候选轮廓、图纸单位、标段、楼栋身份、坐标与层高，再生成模型并保存。二维图纸用于生成可编辑的建筑体量，不能替代完整原图或施工级 BIM。操作步骤见 [图纸与模型](https://github.com/baiye1997/MEB-DSH/blob/main/docs/usage.md#图纸与模型)。
 
 ## 使用与数据
 
@@ -82,9 +107,19 @@ meb-workbench
 - **同步按需开启。** WebDAV 同步需自行配置，目前凭据存储仅支持 macOS。发生两端冲突时，需选择保留哪一端。
 - **原文件自行保管。** 本机引用的原文件、绝对路径和 DSH 对话不进入 WebDAV 备份；换电脑后需重新定位原文件。
 
+## 常见问题
+
+| 情况 | 处理方法 |
+| --- | --- |
+| 安装后没有入口 | 按 DSH 提示刷新或重启，检查插件是否已启用；本地源码安装须先完成构建。 |
+| 找不到包或新版本 | 切换 npm 官方源并核对包名、版本；网络失败时先确认 DSH 能访问所选安装源。 |
+| 提示缺少 CAD 解析环境 | 按 [CAD 环境配置](https://github.com/baiye1997/MEB-DSH/blob/main/docs/cad-setup.md) 安装工具，完全退出并重新打开 DSH。 |
+| 保存时提示版本冲突 | 保留输入或导出草稿，重新载入已保存数据后核对；不要直接覆盖另一端的修改。 |
+| 导出后找不到文件 | 查看操作完成提示中的文件路径；导出由 DSH 写入本机数据目录。 |
+
 ## 源码与贡献
 
-欢迎通过 [Issues](https://github.com/baiye1997/MEB-DSH/issues) 反馈问题，或提交 Pull Request。源码安装、构建和检查方法见 [开发指南](https://github.com/baiye1997/MEB-DSH/blob/main/CONTRIBUTING.md)。
+欢迎通过 [Issues](https://github.com/baiye1997/MEB-DSH/issues) 反馈问题，或提交 Pull Request。源码构建和提交前检查见 [开发指南](https://github.com/baiye1997/MEB-DSH/blob/main/CONTRIBUTING.md)。反馈时请遮盖凭据和真实业务数据。
 
 ## 开源协议与致谢
 
