@@ -1,6 +1,6 @@
 {
   "name": "meb-workbench",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MEB construction-cost workbench plugin for DeepSeek Harness",
   "license": "MIT",
   "repository": {
@@ -57,7 +57,7 @@
     "setup:cad": "uv venv .venv && uv pip install --python .venv/bin/python -r cad-requirements.txt",
     "build": "node build.mjs",
     "prepare": "npm run build",
-    "test": "node --test src/model.test.mjs src/ledger-layout.test.mjs src/ledger-filter.test.mjs src/webdav-sync.test.mjs src/ledger-state.test.mjs src/excel-workbook.test.mjs src/excel-import.test.mjs src/excel-import-xls.test.mjs",
+    "test": "node --test src/model.test.mjs src/ledger-layout.test.mjs src/ledger-filter.test.mjs src/webdav-sync.test.mjs src/ledger-state.test.mjs src/excel-workbook.test.mjs src/excel-import.test.mjs src/excel-import-xls.test.mjs src/dwg-import.test.mjs",
     "test:render": "node test-fixtures/check-render.mjs",
     "test:package": "node test-fixtures/check-package.mjs",
     "verify": "npm test && npm run test:render && npm run build && npm run test:package",

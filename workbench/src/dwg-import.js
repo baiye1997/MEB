@@ -25,7 +25,7 @@ function convertDwg(dwg,dxf){
   // LibreDWG can print megabytes of harmless notices for large nested blocks.
   // Buffering stdout/stderr can reject a successful conversion before extraction.
   const child=spawn('dwg2dxf',['-o',dxf,dwg],{stdio:'ignore',timeout:45000});
-  child.once('error',()=>reject(Error(conversionError)));
+  child.once('error',error=>reject(Error(error.code==='ENOENT'?cadEnvironmentError:conversionError)));
   child.once('close',code=>code===0?resolve():reject(Error(conversionError)));
  });
 }
@@ -45,13 +45,13 @@ async function withConvertedDwg(bytes,job){
  try{
   const dwg=join(dir,'source.dwg'),dxf=join(dir,'converted.dxf');await writeFile(dwg,bytes,{flag:'wx'});
   await convertDwg(dwg,dxf);
-  return await job(dxf);
+  return await job(dxf,python);
  }finally{await rm(dir,{recursive:true,force:true});}
 }
 
 export async function inspectDwgUpload(payload){
  const {name,bytes,sha256}=uploadBytes(payload);
- return withConvertedDwg(bytes,async dxf=>{
+ return withConvertedDwg(bytes,async(dxf,python)=>{
   const {stdout}=await run(python,[extractor,dxf],{timeout:45000,maxBuffer:12*1024*1024});
   const result=JSON.parse(stdout);
   const drawingUse=/立面|剖面|立剖|节点|详图|大样|楼梯|门窗|目录|设计说明|做法表|\b(?:elev|section|detail)\b/i.test(name)?'reference':'plan';
@@ -64,7 +64,7 @@ export async function renderDwgReviewEvidence(payload){
  if(payload.sourceSha256!==sha256)throw Error('当前图纸与候选列表来源不一致，请重新上传');
  const numbers=payload.candidateNumbers;
  if(!Array.isArray(numbers)||!numbers.length||numbers.length>24||new Set(numbers).size!==numbers.length||numbers.some(n=>!Number.isInteger(n)||n<1||n>200))throw Error('请筛选 1–24 个候选轮廓生成审图板');
- return withConvertedDwg(bytes,async dxf=>{
+ return withConvertedDwg(bytes,async(dxf,python)=>{
   const {stdout}=await run(python,[evidenceRenderer,dxf,JSON.stringify(numbers),name],{timeout:60000,maxBuffer:16*1024*1024});
   const rendered=JSON.parse(stdout);
   if(rendered.pages?.length>4||rendered.pages?.some(page=>page.length>4*1024*1024))throw Error('审图板内容过大，请缩小候选范围');
