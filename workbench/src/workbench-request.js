@@ -9,6 +9,6 @@ export async function workbenchRequest(endpoint,payload,send=fetch){
  let result;
  try{result=await response.json();}catch{throw Error('DSH 返回内容无法读取，请检查服务状态后重试。');}
  if(!result?.ok)throw Error(result?.error?.message||'工作台操作未完成，请重试。');
- if(endpoint==='read'&&result.apiVersion!==5)throw Error('工作台已更新，DSH 服务尚未同步。请重启 DSH 后重新打开工作台；已有本机数据不会被清空。');
+ if(endpoint==='read'&&result.apiVersion!==6)throw Error('工作台已更新，DSH 服务尚未同步。请重启 DSH 后重新打开工作台；已有本机数据不会被清空。');
  return result.value;
 }

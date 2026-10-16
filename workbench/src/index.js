@@ -50,7 +50,8 @@ export async function apply(ctx){
   parameters:{
    projectId:{type:'string',description:'Required MEB project ID'},
    kind:{type:'string',enum:['cable','bus','support','price','insulation','duct','custom'],description:'Calculation tool; omit to list all tools'},
-   rowId:{type:'string',description:'Optional row ID for full calculation detail'},
+   worksheetId:{type:'string',description:'Optional worksheet ID for cable, bus or support; empty string selects the original worksheet, omit to search all worksheets of this tool'},
+   rowId:{type:'string',description:'Optional row ID for full calculation detail; specify worksheetId if the ID occurs in multiple worksheets'},
    offset:{type:'integer',description:'Zero-based row offset'},
    limit:{type:'integer',description:'Rows to return, from 1 to 20; default 20'}
   },
@@ -80,10 +81,10 @@ export async function apply(ctx){
    if(endpoint==='meb/sync-disconnect'){const task=queue.then(async()=>{await syncQueue;await removeWebDavSettings(settings);settings=null;configError='';sync.state={kind:'disabled'};return syncStatus();});queue=task.catch(()=>{});return {ok:true,value:await task};}
    if(endpoint==='meb/sync-use-remote'){if(!settings)throw Error('尚未配置 WebDAV');const task=queue.then(async()=>{await syncQueue;return sync.useRemote(value=>backup(value,'本机'));});queue=task.catch(()=>{});return {ok:true,value:{status:await task,data:validate(domain.global.get())}};}
    if(endpoint==='meb/sync-use-local'){if(!settings)throw Error('尚未配置 WebDAV');const task=queue.then(async()=>{await syncQueue;return sync.useLocal(value=>backup(value,'远端'));});queue=task.catch(()=>{});return {ok:true,value:await task};}
-   if(endpoint==='meb/read')return {ok:true,apiVersion:5,value:validate(domain.global.get())};
+   if(endpoint==='meb/read')return {ok:true,apiVersion:6,value:validate(domain.global.get())};
    if(endpoint!=='meb/save')throw Error('未知工作台操作');
    const next=validate(payload);
-   const task=queue.then(async()=>{const current=domain.global.get();if(next.revision!==current.revision)throw Error('其他窗口已经修改数据。请先导出未保存数据，再重新加载。');for(const project of current.projects){const incoming=payload.projects.find(p=>p.id===project.id);if(project.customCalculations?.length&&incoming&&!Object.hasOwn(incoming,'customCalculations'))throw Error('当前页面版本过旧，缺少已保存的自定义计算规则。请先导出未保存数据，再重新加载工作台。');}const saved={...next,revision:current.revision+1};await domain.global.set(saved);return saved;});
+   const task=queue.then(async()=>{const current=domain.global.get();if(next.revision!==current.revision)throw Error('其他窗口已经修改数据。请先导出未保存数据，再重新加载。');for(const project of current.projects){const incoming=payload.projects.find(p=>p.id===project.id);if(project.customCalculations?.length&&incoming&&!Object.hasOwn(incoming,'customCalculations'))throw Error('当前页面版本过旧，缺少已保存的自定义计算规则。请先导出未保存数据，再重新加载工作台。');if(project.calculationWorksheets?.length&&incoming&&!Object.hasOwn(incoming,'calculationWorksheets'))throw Error('当前页面版本过旧，缺少已保存的独立计算工作表。请先导出未保存数据，再重新加载工作台。');}const saved={...next,revision:current.revision+1};await domain.global.set(saved);return saved;});
    queue=task.catch(()=>{});const saved=await task;if(!configError&&settings)void scheduleSync();return {ok:true,value:saved};
   }catch(e){return {ok:false,error:{code:'meb-error',message:e.message,details:{}}};}
  };

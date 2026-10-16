@@ -10,10 +10,9 @@ DWG 识图调用本机 LibreDWG 的 `dwg2dxf`，并使用能导入 `ezdxf` 的 P
 brew install libredwg
 python3 -m venv "$HOME/.local/share/meb-cad"
 "$HOME/.local/share/meb-cad/bin/python" -m pip install ezdxf==1.4.4
-launchctl setenv MEB_PYTHON "$HOME/.local/share/meb-cad/bin/python"
 ```
 
-完全退出 DSH Desktop 后重新打开。`launchctl setenv` 供当前登录会话启动的桌面应用读取，重新登录系统后需要重新设置。
+MEB 会自动查找这个虚拟环境。安装完成后重新上传 DWG 即可；无需修改系统 Python 或重启 DSH。
 
 ## Windows 与 Linux
 
@@ -36,7 +35,7 @@ python -c "import ezdxf; print(ezdxf.__version__)"
 
 macOS 使用上面的虚拟环境时，将第二条命令中的 `python` 换成 `"$HOME/.local/share/meb-cad/bin/python"`。
 
-终端可用但工作台仍提示缺少依赖，通常需要核对 DSH 启动时的 `PATH` 与 `MEB_PYTHON`。环境变量修改后，需要完全退出并重新启动 DSH。
+终端可用但工作台仍提示缺少依赖，请核对 Python 解释器和 `dwg2dxf`。macOS 会额外查找 Apple Silicon 与 Intel 的 Homebrew 默认路径；按上述默认路径安装时可直接重试。自定义 `PATH` 或 `MEB_PYTHON` 后，需要完全退出并重新启动 DSH。
 
 ## 图纸核对
 

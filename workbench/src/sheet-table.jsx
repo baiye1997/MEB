@@ -1,18 +1,29 @@
 import React,{useRef,useEffect,useState} from 'react';
 import DataGrid,{Row} from 'react-data-grid';
 import gridCSS from 'react-data-grid/lib/styles.css';
+import SheetFormatToolbar from './sheet-format-toolbar.jsx';
+import {defaultSheetAlignment,sheetAlignment} from './sheet-format.js';
+import formatCSS from './sheet-format.css';
 // Keep existing field editors and clipboard rules while the grid owns scrolling,
 // frozen columns and selection. Small sheets retain native Tab navigation;
 // large sheets render only visible rows and move focus across their boundary.
 const list=node=>React.Children.toArray(node).flatMap(n=>n?.type===React.Fragment?list(n.props.children):[n]).filter(React.isValidElement);
-export default function SheetTable({children,dataRows,renderDataRow,focusRequest,className='',onActiveRow,onRowContext,contextActions=[],compactFirst=true}){
- const [menu,setMenu]=useState(null),[overflow,setOverflow]=useState({left:false,right:false});
+// Focus the existing editor before native paste, preserving each page's clipboard rules.
+export function sheetCellKeyDown(_,event){
+ if(event.target.matches('input,select,textarea,button')){event.preventGridDefault();return;}
+ if(event.key.toLowerCase()!=='v'||!(event.metaKey||event.ctrlKey)||!event.target.matches('[role=gridcell]'))return;
+ const editor=event.target.querySelector('input:not([type=checkbox]):not(:disabled):not([readonly]),textarea:not(:disabled):not([readonly])');
+ if(!editor)return;
+ event.preventGridDefault();editor.focus();editor.select();
+}
+export default function SheetTable({children,dataRows,renderDataRow,focusRequest,className='',onActiveRow,onRowContext,contextActions=[],compactFirst=true,rowHeight=38,format,onFormatChange,disabled=false,toolbarExtra}){
+ const [menu,setMenu]=useState(null),[overflow,setOverflow]=useState({left:false,right:false}),[selection,setSelection]=useState(null);
  useEffect(()=>{if(!menu)return;const close=e=>{if(e.type!=='keydown'||e.key==='Escape')setMenu(null);};document.addEventListener('click',close);document.addEventListener('keydown',close);window.addEventListener('resize',close);return()=>{document.removeEventListener('click',close);document.removeEventListener('keydown',close);window.removeEventListener('resize',close);};},[menu]);
  const gridRef=useRef(),previousRows=useRef([]);
  const sections=list(children),head=sections.find(s=>s.type==='thead'),body=sections.find(s=>s.type==='tbody'),foot=sections.find(s=>s.type==='tfoot');
  const headers=list(list(head?.props.children)[0]?.props.children);
  // Build editors only when DataGrid actually asks for a visible row.
- const rows=dataRows?dataRows.map((data,index)=>({id:data.id,data,index})):list(body?.props.children).map((r,i)=>({id:r.key||i,element:r,cells:list(r.props.children)}));
+ const rows=dataRows?dataRows.map((data,index)=>({id:data.id,data,index})):list(body?.props.children).map((r,i)=>({id:r.props['data-sheet-row']??r.props['data-business-row']??r.key??i,element:r,cells:list(r.props.children)}));
  const rendered=new Map();
  function visibleRow(row){if(!dataRows)return row;if(!rendered.has(row.id)){const element=renderDataRow(row.data,row.index);rendered.set(row.id,{element,cells:list(element.props.children)});}return rendered.get(row.id);}
 
@@ -24,7 +35,26 @@ export default function SheetTable({children,dataRows,renderDataRow,focusRequest
  function checkOverflow(){const el=gridRef.current?.element;if(!el)return;const next={left:el.scrollLeft>1,right:el.scrollWidth-el.clientWidth-el.scrollLeft>1};setOverflow(old=>old.left===next.left&&old.right===next.right?old:next);}
  const columnLayout=headers.map(h=>`${h.props.style?.width}:${h.props.style?.minWidth}`).join('|');
  useEffect(()=>{const el=gridRef.current?.element;if(!el)return;checkOverflow();const observer=new ResizeObserver(checkOverflow);observer.observe(el);return()=>observer.disconnect();},[columnLayout,rows.length]);
- const columns=headers.map((h,i)=>({key:String(i),name:h.props.children,width:i===0&&compactFirst?58:h.props.children==='#'?38:h.props.className?.includes('action-col')?110:h.props.style?.width,minWidth:i===0&&compactFirst?58:h.props.children==='#'?38:h.props.className?.includes('action-col')?110:h.props.style?.minWidth||140,resizable:true,frozen:i<=freezeThrough,renderHeaderCell:()=>h.props.children,renderCell:({row})=>{const cell=visibleRow(row).cells[i];return cell?<div {...cell.props} className={'sheet-cell '+(cell.props.className||'')}>{cell.props.children}</div>:null;},renderSummaryCell:({row})=>row.cells[i]?.props.children}));
+ const columns=headers.map((h,i)=>{
+  const columnId=h.props['data-column-key'],fallback=h.props['data-default-align']||defaultSheetAlignment(h.props['data-column-type'],columnId);
+  return {key:columnId||'_utility:'+i,headerCellClass:columnId?undefined:'sheet-utility-heading',name:h.props.children,width:i===0&&compactFirst?(h.props.className?.includes('check-col')?34:58):h.props.children==='#'?38:h.props.className?.includes('action-col')?110:h.props.style?.width,minWidth:i===0&&compactFirst?(h.props.className?.includes('check-col')?34:58):h.props.children==='#'?38:h.props.className?.includes('action-col')?110:h.props.style?.minWidth||140,resizable:true,frozen:i<=freezeThrough,renderHeaderCell:()=>h.props.children,renderCell:({row})=>{
+   const cell=visibleRow(row).cells[i];if(!cell)return null;
+   const alignment=columnId?sheetAlignment(format,String(row.id),columnId,fallback):'center';
+   return <div {...cell.props} data-format-column={columnId} data-align={alignment} style={{...cell.props.style,...(alignment?{'--sheet-cell-align':alignment,'--sheet-cell-justify':{left:'flex-start',center:'center',right:'flex-end'}[alignment]}:{})}} className={'sheet-cell '+(cell.props.className||'')}>{cell.props.children}</div>;
+  },renderSummaryCell:({row})=><div style={{textAlign:columnId?sheetAlignment(format,'',columnId,fallback):undefined}}>{row.cells[i]?.props.children}</div>};
+ });
+ function selectCell(rowId,columnId){
+  const header=headers.find(h=>h.props['data-column-key']===columnId);if(!header)return;
+  const index=rows.findIndex(row=>String(row.id)===String(rowId));
+  const nextRowId=index<0?undefined:String(rowId);
+  setSelection(previous=>previous?.rowId===nextRowId&&previous?.columnId===columnId?previous:{rowId:nextRowId,columnId});
+ }
+ function selectFromEvent(e){
+  const cell=e.target.closest('[data-format-column]'),row=cell?.closest('[data-sheet-row]');
+  if(cell&&row)selectCell(row.dataset.sheetRow,cell.dataset.formatColumn);
+ }
+ const selectedHeader=selection&&headers.find(h=>h.props['data-column-key']===selection.columnId),selectedIndex=rows.findIndex(row=>String(row.id)===selection?.rowId);
+ const activeSelection=selectedHeader?{...selection,rowId:selectedIndex<0?undefined:selection.rowId,defaultAlignment:selectedHeader.props['data-default-align']||defaultSheetAlignment(selectedHeader.props['data-column-type'],selection.columnId),label:(selectedIndex<0?'整列':'第 '+(selectedIndex+1)+' 行')+' · '+(selectedHeader.props['data-column-label']||selection.columnId)}:null;
  function tabEditors(e){
   if(e.key!=='Tab'||!e.target.matches('input,select,textarea,button'))return;
   const editors=[...e.currentTarget.querySelectorAll('[role="gridcell"] input:not(:disabled),[role="gridcell"] select:not(:disabled),[role="gridcell"] textarea:not(:disabled),[role="gridcell"] button:not(:disabled)')];
@@ -44,5 +74,5 @@ export default function SheetTable({children,dataRows,renderDataRow,focusRequest
    fields[e.shiftKey?fields.length-1:0]?.focus();
   }));
  }
- return <div className="sheet-host" onContextMenu={e=>{const id=e.target.closest('[data-sheet-row]')?.dataset.sheetRow;if(!id||!contextActions.length)return;e.preventDefault();onActiveRow?.(id);onRowContext?.(id);setMenu({x:Math.max(8,Math.min(e.clientX,window.innerWidth-240)),y:Math.max(8,Math.min(e.clientY,window.innerHeight-300))});}} onKeyDownCapture={tabEditors} onClickCapture={e=>{const id=e.target.closest('[data-sheet-row]')?.dataset.sheetRow;if(id)onActiveRow?.(id);}} onFocusCapture={e=>{const id=e.target.closest('[data-sheet-row]')?.dataset.sheetRow;if(id)onActiveRow?.(id);}}><style>{gridCSS}</style><DataGrid ref={gridRef} onScroll={checkOverflow} onColumnResize={()=>requestAnimationFrame(checkOverflow)} enableVirtualization={rows.length>20} className={'meb-sheet '+className} columns={columns} rows={rows} rowKeyGetter={r=>r.id} rowHeight={48} headerRowHeight={38} bottomSummaryRows={totals} summaryRowHeight={40} style={{height:Math.min(600,Math.max(190,rows.length*48+totals.length*40+42))}} rowClass={r=>visibleRow(r).element.props.className||''} renderers={{renderRow:(key,props)=><Row key={key} {...props} data-sheet-row={visibleRow(props.row).element.props['data-sheet-row']||visibleRow(props.row).element.props['data-business-row']} data-business-row={visibleRow(props.row).element.props['data-business-row']}/>}} onCellKeyDown={(_,e)=>{if(e.target.matches('input,select,textarea,button'))e.preventGridDefault();}} />{(overflow.left||overflow.right)&&<div className="sheet-scroll-controls"><span>左右查看其余字段</span><button type="button" aria-label="向左查看列" disabled={!overflow.left} onClick={()=>gridRef.current?.element?.scrollBy({left:-Math.max(180,gridRef.current.element.clientWidth*.65)})}>← 向左</button><button type="button" aria-label="向右查看列" disabled={!overflow.right} onClick={()=>gridRef.current?.element?.scrollBy({left:Math.max(180,gridRef.current.element.clientWidth*.65)})}>向右 →</button></div>}{menu&&<div role="menu" aria-label="行操作" className="sheet-context-menu" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setMenu(null);}if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();const items=[...e.currentTarget.querySelectorAll('button:not(:disabled)')],i=items.indexOf(e.target);items[e.key==='Home'?0:e.key==='End'?items.length-1:(i+(e.key==='ArrowDown'?1:-1)+items.length)%items.length]?.focus();}}} style={{position:'fixed',left:menu.x,top:menu.y}}><button role="menuitem" type="button" onClick={()=>{window.dispatchEvent(new Event('meb-undo'));setMenu(null);}}>撤销 · Ctrl/⌘ Z</button>{contextActions.map((a,i)=><button autoFocus={i===0} role="menuitem" type="button" key={a.label} disabled={a.disabled} onClick={()=>{a.run();setMenu(null);}}>{a.label}</button>)}</div>}</div>;
+ return <div className="sheet-host" onContextMenu={e=>{const id=e.target.closest('[data-sheet-row]')?.dataset.sheetRow;if(!id||!contextActions.length)return;e.preventDefault();onActiveRow?.(id);onRowContext?.(id);setMenu({x:Math.max(8,Math.min(e.clientX,window.innerWidth-240)),y:Math.max(8,Math.min(e.clientY,window.innerHeight-300))});}} onKeyDownCapture={tabEditors} onClickCapture={e=>{selectFromEvent(e);const id=e.target.closest('[data-sheet-row]')?.dataset.sheetRow;if(id)onActiveRow?.(id);}} onFocusCapture={e=>{selectFromEvent(e);const id=e.target.closest('[data-sheet-row]')?.dataset.sheetRow;if(id)onActiveRow?.(id);}}><style>{gridCSS+formatCSS}</style>{onFormatChange&&<SheetFormatToolbar extra={toolbarExtra} format={format} selection={activeSelection} onChange={onFormatChange} disabled={disabled}/>}<DataGrid onSelectedCellChange={({rowIdx,column})=>{if(!column.key.startsWith('_utility:'))selectCell(rows[rowIdx]?.id,column.key);}} ref={gridRef} onScroll={checkOverflow} onColumnResize={()=>requestAnimationFrame(checkOverflow)} enableVirtualization={rows.length>20} className={'meb-sheet '+className} columns={columns} rows={rows} rowKeyGetter={r=>r.id} rowHeight={rowHeight} headerRowHeight={38} bottomSummaryRows={totals} summaryRowHeight={40} style={{height:Math.min(600,Math.max(190,rows.length*rowHeight+totals.length*40+42))}} rowClass={r=>visibleRow(r).element.props.className||''} renderers={{renderRow:(key,props)=><Row key={key} {...props} data-sheet-row={visibleRow(props.row).element.props['data-sheet-row']||visibleRow(props.row).element.props['data-business-row']} data-business-row={visibleRow(props.row).element.props['data-business-row']}/>}} onCellKeyDown={sheetCellKeyDown} />{(overflow.left||overflow.right)&&<div className="sheet-scroll-controls"><span>左右查看其余字段</span><button type="button" aria-label="向左查看列" disabled={!overflow.left} onClick={()=>gridRef.current?.element?.scrollBy({left:-Math.max(180,gridRef.current.element.clientWidth*.65)})}>← 向左</button><button type="button" aria-label="向右查看列" disabled={!overflow.right} onClick={()=>gridRef.current?.element?.scrollBy({left:Math.max(180,gridRef.current.element.clientWidth*.65)})}>向右 →</button></div>}{menu&&<div role="menu" aria-label="行操作" className="sheet-context-menu" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setMenu(null);}if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();const items=[...e.currentTarget.querySelectorAll('button:not(:disabled)')],i=items.indexOf(e.target);items[e.key==='Home'?0:e.key==='End'?items.length-1:(i+(e.key==='ArrowDown'?1:-1)+items.length)%items.length]?.focus();}}} style={{position:'fixed',left:menu.x,top:menu.y}}><button role="menuitem" type="button" onClick={()=>{window.dispatchEvent(new Event('meb-undo'));setMenu(null);}}>撤销 · Ctrl/⌘ Z</button>{contextActions.map((a,i)=><button autoFocus={i===0} role="menuitem" type="button" key={a.label} disabled={a.disabled} onClick={()=>{a.run();setMenu(null);}}>{a.label}</button>)}</div>}</div>;
 }

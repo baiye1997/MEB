@@ -11,3 +11,13 @@ test('styled export preserves identifiers, precision, literal formulas, dates an
  assert.equal(cell('补充说明').value,'=SUM(A1:A3)');assert.equal(cell('补充说明').type,ExcelJS.ValueType.String);assert.equal(cell('日期').value.toISOString(),'2026-09-29T00:00:00.000Z');assert.equal(cell('入账时间').value.toISOString(),'2026-09-29T20:00:00.000Z');
  assert.ok(!header.includes('隐藏'));assert.equal(cell('备注').alignment.wrapText,true);assert.ok(s.getRow(4).height>27);assert.equal(s.views[0].ySplit,3);assert.equal(s.views[0].xSplit,1);assert.ok(s.autoFilter.startsWith('A3:'));assert.equal(s.pageSetup.orientation,'landscape');assert.equal(s.pageSetup.printTitlesRow,'1:3');assert.deepEqual(rows,before);
 });
+test('Excel export preserves per-cell, row and column alignment after filtering and column reordering',async()=>{
+ const columns=[{id:'hidden',name:'隐藏',type:'text',hidden:true},{id:'amount',name:'金额',type:'number'},{id:'name',name:'事项',type:'text'}];
+ const rows=[{id:'second',cells:{amount:'12.5',name:'后排到前面'}},{id:'first',cells:{amount:'3',name:'另一行'}}];
+ const format={columns:{amount:'center',name:'right'},rows:{second:'left'},cells:{second:{amount:'right'}}};
+ const original=structuredClone({rows,format}),bytes=await createLedgerWorkbook({rows,columns,format,kind:'calculation',title:'对齐验收',projectName:'示例项目'}),wb=new ExcelJS.Workbook();await wb.xlsx.load(bytes);
+ const s=wb.worksheets[0];
+ assert.equal(s.getCell('A4').alignment.horizontal,'right');assert.equal(s.getCell('B4').alignment.horizontal,'left');
+ assert.equal(s.getCell('A5').alignment.horizontal,'center');assert.equal(s.getCell('B5').alignment.horizontal,'right');
+ assert.equal(s.getCell('A4').value,12.5);assert.deepEqual({rows,format},original);
+});

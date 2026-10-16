@@ -3,13 +3,29 @@ import React from 'react';
 import ExcelJS from 'exceljs';
 import {createRoot} from 'react-dom/client';
 import {App} from '../src/client.jsx';
-import {initial,blankProject,validate} from '../src/model.js';
-const sampleCount=new URLSearchParams(location.search).get('rows')==='5000'?5000:65;
-const storageKey='meb-experience-acceptance'+(sampleCount===65?'':'-5000');
+import {initial,blankProject,ledgerBook,validate} from '../src/model.js';
+const params=new URLSearchParams(location.search),layoutAudit=params.get('audit')==='layout';
+const sampleCount=params.get('rows')==='5000'?5000:65;
+const storageKey=layoutAudit?'meb-layout-acceptance-v1':'meb-experience-acceptance'+(sampleCount===65?'':'-5000');
 const data=initial();data.projects=[blankProject('experience-test','体验验收 · 模拟项目'),blankProject('experience-other','隔离第二项目')];
 data.projects[0].rows=Array.from({length:sampleCount},(_,i)=>({id:'r'+i,cells:{number:'SF-'+String(i+1).padStart(3,'0'),location:i<2?'教学楼一层':'教学楼二层',description:i<2?'给水管安装':'照明配管',reported:String(i+1),unit:'m',discipline:i<2?'给排水':'电气'},files:[],notes:''}));
-let saved=JSON.parse(localStorage.getItem(storageKey)||'null')||data;
-window.fetch=async(url,options)=>{if(url!=='/api/meb-workbench')throw Error('隔离验收禁止外部请求');const {endpoint,payload}=JSON.parse(options.body);if(endpoint==='meb/export'){const wb=new ExcelJS.Workbook(),bytes=Uint8Array.from(atob(payload.base64),char=>char.charCodeAt(0));await wb.xlsx.load(bytes);const sheet=wb.worksheets[0],matrix=[];sheet.eachRow({includeEmpty:true},row=>matrix.push(row.values.slice(1).map(value=>value??'')));let out=document.getElementById('export-evidence');if(!out){out=document.createElement('pre');out.id='export-evidence';out.setAttribute('aria-label','模拟导出内容');document.body.append(out);}out.textContent=JSON.stringify(matrix);return {json:async()=>({ok:true,value:'/模拟导出/'+payload.name})};}if(['meb/sync-status','meb/sync-check','meb/sync-wait'].includes(endpoint))return {json:async()=>({ok:true,value:{configured:false,kind:'disabled'}})};if(endpoint==='meb/save'){saved=validate(payload);saved.revision++;localStorage.setItem(storageKey,JSON.stringify(saved));}return {json:async()=>({ok:true,apiVersion:5,value:structuredClone(saved)})};};
+if(layoutAudit){
+ const project=data.projects[0],description='隔离布局验收模拟收方内容：施工范围、材料规格、工程数量、计量依据与签认情况均为合成数据，不对应任何真实工程。'.repeat(6).slice(0,300);
+ project.name='隔离布局验收模拟项目 · 长项目名称用于核对普通窗口内的省略、切换与按钮间距 · 教学楼综合改造及配套管网工程';
+ project.columns.push({id:'layout-long-field',name:'现场签认及施工图版本核对依据与分部分项工程补充记录'.repeat(3),type:'text',width:240,hidden:false,options:[]});
+ project.columns.find(column=>column.id==='date').hidden=false;
+ project.rows[0].cells={...project.rows[0].cells,description,date:'2026-10-15','layout-long-field':'仅供隔离布局验收，长字段内容不参与工程计算。'};
+ project.rows[1].cells.date='2026-10-14';project.rows[2].cells.date='2026-10-13';
+ ledgerBook(project,'calculation').rows=Array.from({length:3},(_,i)=>({id:'layout-calculation-'+i,cells:{date:'2026-10-'+String(15-i),title:'模拟计算记录 '+(i+1),description:'电线电缆铜价调差 · 隔离记录',specification:'YJV-3×4',quantity:String(12.5+i),unit:'m',amount:String(125.25+i),remarks:i===0?description:'模拟核对备注'},files:[],notes:''}));
+ project.model=true;project.modelConfig={mode:'blocks',buildings:[{id:'layout-building-a',number:'1',name:'模拟教学楼',lot:'布局验收标段',phase:'one',heights:[3.6,3.3,3.3],width:24,depth:16,x:0,y:0},{id:'layout-building-b',number:'2',name:'模拟配套楼',lot:'布局验收标段',phase:'two',heights:[3.6,3.3],width:18,depth:12,x:40,y:8}]};
+ project.finance={contract:'12000000',cleared:'11800000',audit1:'11750000',ownerDiscount:'3',ourDiscount:'2'};
+ const image='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMwzX7+HwAE5wKHPqbviwAAAABJRU5ErkJggg==';
+ data.files=[{id:'layout-png',projectId:project.id,name:'隔离验收-单像素.png',mime:'image/png',kind:'copy',data:'data:image/png;base64,'+image,size:atob(image).length,createdAt:'2026-10-15T00:00:00Z'}];project.rows[0].files=['layout-png'];
+ data.materials=validate(data).materials;
+ data.materials.rows=Array.from({length:3},(_,i)=>({id:'layout-material-'+i,cells:{title:['模拟铜芯电力电缆','模拟给水管材','模拟风管板材'][i],specification:['YJV-3×4','DN50','δ0.8'][i],brand:'隔离示例品牌',unit:['m','m','m²'][i],price:['18.5','32.75','86.2'][i],taxBasis:'含税',taxRate:'13',supplier:'模拟供应商 '+(i+1),date:'2026-10-'+String(15-i),location:'隔离模拟地区',source:'本机合成验收数据'},files:[],notes:''}));
+}
+let saved=validate(JSON.parse(localStorage.getItem(storageKey)||'null')||data);
+window.fetch=async(url,options)=>{if(url!=='/api/meb-workbench')throw Error('隔离验收禁止外部请求');const {endpoint,payload}=JSON.parse(options.body);if(layoutAudit&&endpoint==='meb/model-dwg')return {json:async()=>({ok:true,value:{units:'mm',origin:[0,0],unitsConfirmed:false,scanned:10,truncated:false,source:{name:payload.name,sha256:'a'.repeat(64)},candidates:[{index:1,layer:'A-WALL',points:[[0,0],[20,0],[20,12],[0,12]],width:20,depth:12,area:240,gap:0,score:10},{index:2,layer:'A-BLD',points:[[40,0],[55,0],[55,10],[40,10]],width:15,depth:10,area:150,gap:2.1,score:8}]}})};if(layoutAudit&&endpoint==='meb/model-dwg-evidence')return {json:async()=>({ok:false,error:{message:'隔离布局验收未配置审图图像；可核对候选轮廓与模型操作。'}})};if(endpoint==='meb/export'){const wb=new ExcelJS.Workbook(),bytes=Uint8Array.from(atob(payload.base64),char=>char.charCodeAt(0));await wb.xlsx.load(bytes);const sheet=wb.worksheets[0],matrix=[];sheet.eachRow({includeEmpty:true},row=>matrix.push(row.values.slice(1).map(value=>value??'')));let out=document.getElementById('export-evidence');if(!out){out=document.createElement('pre');out.id='export-evidence';out.setAttribute('aria-label','模拟导出内容');document.body.append(out);}out.textContent=JSON.stringify(matrix);return {json:async()=>({ok:true,value:'/模拟导出/'+payload.name})};}if(['meb/sync-status','meb/sync-check','meb/sync-wait'].includes(endpoint))return {json:async()=>({ok:true,value:{configured:false,kind:'disabled'}})};if(endpoint==='meb/save'){saved=validate(payload);saved.revision++;localStorage.setItem(storageKey,JSON.stringify(saved));}return {json:async()=>({ok:true,apiVersion:6,value:structuredClone(saved)})};};
 function feed(initial){let value=initial;const listeners=new Set();return {getSnapshot:()=>value,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);},set:next=>{value=next;listeners.forEach(fn=>fn());}};}
 const list=feed({ids:[],byId:{}}),bindings=new Map();let count=0;
 const ctx={sessions:{list,create:async()=>{const id='fixture-'+Date.now()+'-'+(++count),events=feed({entries:[]}),session=feed({running:false});let seq=0;

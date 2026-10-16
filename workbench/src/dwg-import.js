@@ -1,5 +1,5 @@
 import {mkdtemp,writeFile,rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
+import {tmpdir,homedir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFile,spawn} from 'node:child_process';
@@ -15,19 +15,27 @@ const conversionError='DWG 转换失败；请核对图纸版本或改用可读�
 const cadEnvironmentError='缺少 CAD 解析环境；请安装 LibreDWG 的 dwg2dxf，并让 Python 环境可导入 ezdxf（可用 MEB_PYTHON 指定 Python 路径）';
 
 async function findPython(){
- const candidates=[process.env.MEB_PYTHON,bundledPython,'python3','python'].filter(Boolean);
+ const candidates=[process.env.MEB_PYTHON,bundledPython,join(homedir(),'.local/share/meb-cad/bin/python'),'python3','python'].filter(Boolean);
  for(const candidate of candidates)try{await run(candidate,['-c','import ezdxf'],{timeout:10000});return candidate;}catch{}
  throw Error(cadEnvironmentError);
 }
 
-function convertDwg(dwg,dxf){
- return new Promise((resolve,reject)=>{
-  // LibreDWG can print megabytes of harmless notices for large nested blocks.
-  // Buffering stdout/stderr can reject a successful conversion before extraction.
-  const child=spawn('dwg2dxf',['-o',dxf,dwg],{stdio:'ignore',timeout:45000});
-  child.once('error',error=>reject(Error(error.code==='ENOENT'?cadEnvironmentError:conversionError)));
-  child.once('close',code=>code===0?resolve():reject(Error(conversionError)));
- });
+async function convertDwg(dwg,dxf){
+ // Finder-launched macOS apps may only inherit the system PATH.
+ const converters=process.platform==='darwin'?['dwg2dxf','/opt/homebrew/bin/dwg2dxf','/usr/local/bin/dwg2dxf']:['dwg2dxf'];
+ for(const converter of converters){
+  try{
+   await new Promise((resolve,reject)=>{
+    // LibreDWG can print megabytes of harmless notices for large nested blocks.
+    // Buffering stdout/stderr can reject a successful conversion before extraction.
+    const child=spawn(converter,['-o',dxf,dwg],{stdio:'ignore',timeout:45000});
+    child.once('error',reject);
+    child.once('close',code=>code===0?resolve():reject(Error(conversionError)));
+   });
+   return;
+  }catch(error){if(error.code!=='ENOENT')throw Error(conversionError);}
+ }
+ throw Error(cadEnvironmentError);
 }
 
 function uploadBytes(payload){

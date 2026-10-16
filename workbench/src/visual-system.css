@@ -7,11 +7,13 @@
  --rule:light-dark(#e0e5ec,#384457);
  --quiet:light-dark(#f5f7fa,#242c39);
  --selected:light-dark(#eaf1fd,#253d5e);
- --text-body:14px;--text-label:13px;--text-meta:12px;--text-title:20px;
- font-size:var(--text-body);line-height:1.6;
+ --text-body:13px;--text-label:12px;--text-meta:12px;--text-title:18px;
+ font-size:var(--text-body);line-height:1.5;
 }
 .meb input::placeholder,.meb textarea::placeholder{color:var(--muted);opacity:1}
-.meb :is(button,input,textarea,[role=combobox]){font-size:var(--text-body)}
+.meb :is(button,input,textarea,[role=combobox]){font-size:var(--text-body);line-height:1.4}
+.meb button{padding:5px 10px}
+.meb input:not([type=checkbox]),.meb select,.meb textarea{padding:5px 8px}
 .meb button:disabled{opacity:1;color:var(--muted);background:var(--quiet);border-color:var(--rule)}
 
 .meb :is(button,summary,[role=tab]):focus-visible{outline:2px solid var(--blue);outline-offset:3px}
@@ -37,9 +39,9 @@
 .meb .status,.meb .status>button{font-size:12px}
 .meb .status-hint{font-size:12px}
 /* Sheets: medium weight headers and full-contrast cell values. */
-.meb .meb-sheet{font-size:14px}
-.meb .meb-sheet [role=columnheader]{font-size:13px;font-weight:600;color:var(--ink);background:var(--quiet)}
-.meb .sheet-cell input:not([type=checkbox]),.meb .meb-sheet .ui-field,.meb .meb-sheet .ui-select{font-size:14px;color:var(--ink)}
+.meb .meb-sheet{font-size:13px}
+.meb .meb-sheet [role=columnheader]{font-size:12px;font-weight:600;color:var(--ink);background:var(--quiet)}
+.meb .sheet-cell input:not([type=checkbox]),.meb .meb-sheet .ui-field,.meb .meb-sheet .ui-select{font-size:13px;color:var(--ink)}
 .meb .sheet-cell.business-index span,.meb .meb-sheet .approval-cell label{font-size:12px}
 .meb .business-footer,.meb .calc-total,.meb .calc-feedback{font-size:12px;color:var(--muted)}
 /* Documents: readable prose, smaller labels, deliberate numeric roles. */

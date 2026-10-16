@@ -627,7 +627,7 @@ test('host authentication and connection failures use actionable messages withou
  await assert.rejects(workbenchRequest('read',null,async()=>{throw Error('network');}),/无法连接 DSH/);
  await assert.rejects(workbenchRequest('read',null,async()=>({ok:true,json:async()=>{throw Error('HTML');}})),/返回内容无法读取/);
  await assert.rejects(workbenchRequest('save',{},async()=>({ok:true,json:async()=>({ok:false,error:{message:'其他窗口已经修改数据'}})})),/其他窗口/);
- assert.equal(await workbenchRequest('read',null,async(path,options)=>{assert.equal(path,'/api/meb-workbench');assert.equal(options.credentials,'same-origin');assert.equal(JSON.parse(options.body).endpoint,'meb/read');return {ok:true,json:async()=>({ok:true,apiVersion:5,value:42})};}),42);
+ assert.equal(await workbenchRequest('read',null,async(path,options)=>{assert.equal(path,'/api/meb-workbench');assert.equal(options.credentials,'same-origin');assert.equal(JSON.parse(options.body).endpoint,'meb/read');return {ok:true,json:async()=>({ok:true,apiVersion:6,value:42})};}),42);
 });
 
 test('DSH upload receipts are cached by File identity and session',async()=>{
@@ -663,3 +663,16 @@ test('missing local reference provides a relocation instruction',async()=>{
 });
 
 test('updated client refuses an older running host before editing',async()=>{await assert.rejects(workbenchRequest('read',null,async()=>({ok:true,json:async()=>({ok:true,apiVersion:2,value:{}})})),/请重启 DSH/);await assert.rejects(workbenchRequest('read',null,async()=>({ok:true,json:async()=>({ok:true,value:{}})})),/请重启 DSH/);});
+
+import {calculationSummary} from './calculation-sheet.js';
+test('currency totals add visible cents for all and selected calculation rows without changing snapshots',()=>{
+ const sheet=emptySheet('cable');Object.assign(sheet.params,{base:'60000',current:'70000'});
+ sheet.rows=[['WDZ-BYJ-3*2.5','100'],['YJV-5*10','80'],['YJV-4*25+1*16','60'],['YJV-3*50+2*25','35'],['YJV-3*95+2*50','20']].map(([specification,length])=>({...newCalculationRow(),specification,length}));
+ const resolve=row=>resolveCalculation('cable',sheet,row),frozen=snapshotRecord({id:'total-test',name:'汇总验收'},'cable',sheet,sheet.rows[0]),original=JSON.stringify(frozen);
+ assert.equal(calculationSummary(sheet.rows,'元',resolve).display,'1,927.41');
+ assert.equal(calculationSummary(sheet.rows.slice(0,3),'元',resolve).display,'854.60');
+ assert.equal(JSON.stringify(frozen),original);near(frozen.source.result,54.735);
+ assert.deepEqual(calculationSummary([1.005,-1.005,null],'元',value=>value===null?{error:'待补全'}:{result:{value}}),{count:2,errors:1,display:'0.00'});
+ assert.equal(calculationSummary([1e15,1e15,.01],'元',value=>({result:{value}})).display,'2,000,000,000,000,000.01');
+ assert.equal(calculationSummary([],'元',resolve).display,'0.00');
+});

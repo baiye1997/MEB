@@ -21,10 +21,56 @@ assert.match(locked,/<button[^>]*disabled=""[^>]*>删除 1 行<\/button>/);
 assert.match(locked,/<(?:input|div)[^>]*(?:disabled=""|aria-disabled="true")[^>]*aria-label="1行计算明细"/);
 
 // A large table must never instantiate one editor per offscreen record.
-import SheetTable from '../src/sheet-table.jsx';
+import SheetTable,{sheetCellKeyDown} from '../src/sheet-table.jsx';
 let editorRows=0;
 const large=Array.from({length:20000},(_,i)=>({id:String(i)}));
 const lazy=renderToStaticMarkup(<SheetTable dataRows={large} renderDataRow={(row,i)=>{editorRows++;return <tr data-business-row={row.id}><td><input aria-label={'row '+i}/></td></tr>;}}><thead><tr><th>编号</th></tr></thead></SheetTable>);
 assert.ok(editorRows>0&&editorRows<100,`Created ${editorRows} editor rows for a virtual table`);
 assert.ok((lazy.match(/data-business-row=/g)||[]).length<100);
 console.log('Large table creates only visible editors.');
+
+// A selected grid cell must route native paste into its existing editable field.
+for(const modifier of ['metaKey','ctrlKey']){
+ const calls=[],editor={focus:()=>calls.push('focus'),select:()=>calls.push('select')};
+ const target={matches:selector=>selector==='[role=gridcell]',querySelector:()=>editor};
+ sheetCellKeyDown(null,{key:'v',[modifier]:true,target,preventGridDefault:()=>calls.push('grid')});
+ assert.deepEqual(calls,['grid','focus','select']);
+}
+for(const key of ['v','ArrowRight']){
+ let queried=false;
+ sheetCellKeyDown(null,{key,target:{matches:selector=>selector==='[role=gridcell]',querySelector:()=>{queried=true;}},preventGridDefault:()=>assert.fail('Plain keys retain grid navigation')});
+ assert.equal(queried,false);
+}
+sheetCellKeyDown(null,{key:'v',metaKey:true,target:{matches:selector=>selector==='[role=gridcell]',querySelector:()=>null},preventGridDefault:()=>assert.fail('Read-only and utility cells cannot be edited')});
+let editing=false;
+sheetCellKeyDown(null,{target:{matches:()=>true},preventGridDefault:()=>editing=true});
+assert.equal(editing,true);
+console.log('Selected-cell paste focuses editable fields for both platform shortcuts; utility cells stay protected.');
+
+// React rewrites child keys; saved formats must still find the original business IDs.
+const tbodyFormat={cells:{'saved:row=1':{name:'right'}},rows:{'saved:row=2':'center'}};
+const tbodyHtml=renderToStaticMarkup(<SheetTable format={tbodyFormat} onFormatChange={()=>{}}><thead><tr><th data-column-key="name">事项</th></tr></thead><tbody><tr key="react-key-1" data-business-row="saved:row=1"><td><input readOnly value="原始单元格格式"/></td></tr><tr key="react-key-2" data-sheet-row="saved:row=2"><td><input readOnly value="原始整行格式"/></td></tr></tbody></SheetTable>).replace(/<style>[\s\S]*?<\/style>/g,'');
+assert.match(tbodyHtml,/data-sheet-row="saved:row=1"/);
+assert.match(tbodyHtml,/data-sheet-row="saved:row=2"/);
+assert.match(tbodyHtml,/data-format-column="name" data-align="right"/);
+assert.match(tbodyHtml,/data-format-column="name" data-align="center"/);
+console.log('Legacy tbody rows retain saved cell and row alignment through original business IDs.');
+
+import './check-calculator-render.jsx';
+
+import './check-model-editor-render.jsx';
+
+// Consolidated receipt actions keep file tools and row actions reachable without duplicate add buttons.
+import BusinessGrid from '../src/business-grid.jsx';
+const receiptBook={columns:[{id:'number',name:'收方单编号',type:'text'}],rows:[],views:[]};
+const receiptToolbar=renderToStaticMarkup(<BusinessGrid kind="receipt" book={receiptBook} heading={<span>收方台账</span>} menuItems={<button>导入 Excel</button>}/>);
+assert.match(receiptToolbar,/<h1 class="ledger-heading">/);
+assert.match(receiptToolbar,/aria-label="更多台账操作"/);
+assert.match(receiptToolbar,/导入 Excel/);
+assert.match(receiptToolbar,/复制本视图（含表头）/);
+assert.equal((receiptToolbar.match(/>添加行<\/button>/g)||[]).length,1);
+const otherToolbar=renderToStaticMarkup(<BusinessGrid kind="change" book={receiptBook}/>);
+assert.doesNotMatch(otherToolbar,/ledger-heading|更多台账操作/);
+assert.match(otherToolbar,/aria-label="行操作"/);
+assert.equal((otherToolbar.match(/>添加行<\/button>/g)||[]).length,1);
+console.log('Receipt menu consolidation preserves file and row actions; other ledgers retain their toolbar.');

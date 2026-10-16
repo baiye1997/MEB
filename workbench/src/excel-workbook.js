@@ -1,10 +1,11 @@
 import ExcelJS from 'exceljs';
 import {ledgerExportMatrix} from './ledger-export.js';
 import {ledgerDisplayColumns} from './ledger-layout.js';
+import {sheetAlignment} from './sheet-format.js';
 const ink='FF243746',accent='FF254F60',rule='FFDDE5E9';
 const quantityFormat=value=>{const [mantissa,exp='0']=String(value).split('e'),places=Math.max(0,(mantissa.split('.')[1]?.length||0)-Number(exp));return '#,##0'+(places?'.'+'0'.repeat(Math.min(15,places)):'');};
 const textWidth=value=>[...String(value??'')].reduce((n,c)=>n+(c.charCodeAt(0)>255?2:1),0);
-export async function createLedgerWorkbook({rows,columns,kind,title,projectName,scope='当前筛选结果',exportedAt=new Date().toISOString()}){
+export async function createLedgerWorkbook({rows,columns,kind,title,projectName,format,scope='当前筛选结果',exportedAt=new Date().toISOString()}){
  const cols=ledgerDisplayColumns(columns,kind),matrix=ledgerExportMatrix(rows,cols,kind),headers=matrix[0];
  const workbook=new ExcelJS.Workbook();workbook.creator='MEB 工作台';workbook.created=new Date(exportedAt);
  const sheet=workbook.addWorksheet(title.slice(0,31),{properties:{defaultRowHeight:26},views:[{state:'frozen',xSplit:1,ySplit:3,showGridLines:false}],pageSetup:{paperSize:headers.length>12?8:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.25,right:.25,top:.45,bottom:.45,header:.2,footer:.2}}});
@@ -33,7 +34,8 @@ export async function createLedgerWorkbook({rows,columns,kind,title,projectName,
   const row=sheet.addRow(values);let lines=1;
   row.eachCell({includeEmpty:true},(cell,i)=>{
    const value=values[i-1],c=cols[i-1];cell.font={name:'微软雅黑',size:11,color:{argb:ink}};
-   cell.alignment={vertical:'middle',wrapText:true,horizontal:typeof value==='number'?'right':value instanceof Date||c?.id==='unit'?'center':'left'};
+   const fallback=typeof value==='number'||['number','computed'].includes(c?.type)?'right':value instanceof Date||c?.id==='unit'?'center':'left';
+   cell.alignment={vertical:'middle',wrapText:true,horizontal:c?sheetAlignment(format,rows[index-1].id,c.id,fallback):fallback};
    cell.border={bottom:{style:'hair',color:{argb:rule}}};
    if(index%2===0)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF3F7F8'}};
    if(value instanceof Date)cell.numFmt=c?.type==='date'?'yyyy-mm-dd':'yyyy-mm-dd hh:mm';

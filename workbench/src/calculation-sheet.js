@@ -1,18 +1,19 @@
 import {parseTSV} from './business.js';
 import {defaults,calculate,specs} from './calculations.js';
+import {customSummary} from './custom-calculation.js';
 export const formulaVersion='2026-09-21.1';
 export function emptySheet(kind){return {params:kind==='support'?{beam:'600',gap:'100',spacing:'2',rodWeight:'0.617'}:{base:'',current:'',threshold:'3',density:'0.0089'},rows:[]};}
 export function newCalculationRow(){return {id:crypto.randomUUID(),name:'',specification:'',length:'',overrides:{}};}
 // Validate the full rectangle before changing any existing row.
-export function pasteCalculationRows(sheet,rowId,key,text){
- const keys=['name','specification','length'],start=keys.indexOf(key),index=sheet.rows.findIndex(row=>row.id===rowId),matrix=parseTSV(text);
+export function pasteCalculationRows(sheet,rowId,key,text,kind){
+ const keys=['name','specification','length',...(['cable','bus'].includes(kind)?['base','current']:[])],start=keys.indexOf(key),index=sheet.rows.findIndex(row=>row.id===rowId),matrix=parseTSV(text);
  if(start<0||index<0)throw Error('粘贴位置已变化，请重新选择单元格');
  if(!matrix.length)throw Error('剪贴板没有可写入的内容');
- if(matrix.some(row=>row.length>keys.length-start))throw Error(`从当前列最多可粘贴 ${keys.length-start} 列，请只复制事项、规格、长度对应的区域`);
+ if(matrix.some(row=>row.length>keys.length-start))throw Error(`从当前列最多可粘贴 ${keys.length-start} 列，请只复制当前表格可编辑的数据列`);
  const next=structuredClone(sheet);
  for(const [i,cells] of matrix.entries()){
   const row=next.rows[index+i]||(next.rows[index+i]=newCalculationRow());
-  for(const [j,value] of cells.entries())row[keys[start+j]]=keys[start+j]==='length'?value.trim().replace(/[，,]/g,''):value.trim();
+  for(const [j,value] of cells.entries()){const field=keys[start+j],clean=['length','base','current'].includes(field)?value.trim().replace(/[，,]/g,''):value.trim();if(['base','current'].includes(field))row.overrides[field]=clean;else{row[field]=clean;if(field==='length')delete row.overrides.length;}}
  }
  return {sheet:next,count:matrix.length};
 }
@@ -62,12 +63,23 @@ export function resolveCalculation(kind,sheet,row){
  return {inputs:input,mode,result,signature:JSON.stringify({kind,version:formulaVersion,input,mode,name:row.name,specification:row.specification})};
 }
 export function calculationFingerprint(kind,sheet,row){return JSON.stringify([kind,sheet.params,row.name,row.specification,row.length,row.overrides]);}
-export function snapshotRecord(project,kind,sheet,row,target=project){
+export function snapshotRecord(project,kind,sheet,row,target=project,worksheetId=''){
  const resolved=resolveCalculation(kind,sheet,row),time=new Date().toISOString();
- const source={projectId:project.id,projectName:project.name,targetProjectId:target.id,targetProjectName:target.name,sheetId:kind,rowId:row.id,specification:row.specification,formulaVersion,capturedAt:time,inputs:resolved.inputs,mode:resolved.mode,signature:resolved.signature,result:resolved.result.value,unit:resolved.result.unit,formula:specs[kind].formula,workbook:specs[kind].source};
+ const source={projectId:project.id,projectName:project.name,targetProjectId:target.id,targetProjectName:target.name,sheetId:kind,...(worksheetId?{worksheetId}:{}),worksheetName:sheet.name||'工作表 1',rowId:row.id,specification:row.specification,formulaVersion,capturedAt:time,inputs:resolved.inputs,mode:resolved.mode,signature:resolved.signature,result:resolved.result.value,unit:resolved.result.unit,formula:specs[kind].formula,workbook:specs[kind].source};
  return {id:crypto.randomUUID(),cells:{title:row.name||row.specification,date:time.slice(0,10),number:row.id.slice(0,8),description:specs[kind].name,reported:resolved.result.value.toFixed(resolved.result.unit==='元'?2:3),specification:row.specification,quantity:kind==='support'?resolved.result.value.toFixed(3):resolved.inputs.length,amount:kind==='support'?'':resolved.result.value.toFixed(2),unit:kind==='support'?'kg':'m',remarks:'',status:'草稿',reason:resolved.result.value<0?'调减计算':''},files:[],notes:`${project.name} / ${specs[kind].name} / 行 ${row.id}\n${specs[kind].source}`,source};
 }
 export const formatResult=(value,unit)=>value.toLocaleString('zh-CN',{minimumFractionDigits:unit==='元'?2:0,maximumFractionDigits:unit==='元'?2:3});
+// Currency totals add displayed cents; calculation inputs and frozen results retain full precision.
+export function calculationSummary(rows,unit,resolve){
+ if(unit==='元'){
+  const summary=customSummary(rows,2,row=>{const value=resolve(row);return value.error?value:{display:formatResult(value.result.value,unit).replaceAll(',','')};});
+  const [whole,fraction]=summary.display.split('.');
+  return {...summary,display:whole.replace(/\B(?=(\d{3})+(?!\d))/g,',')+'.'+fraction};
+ }
+ let sum=0,errors=0;for(const row of rows){const value=resolve(row);if(value.error)errors++;else sum+=value.result.value;}
+ return {count:rows.length-errors,errors,display:formatResult(sum,unit)};
+}
+
 
 export function participatingFields(kind,mode){return specs[kind].fields.filter(([id])=>kind!=='bus'||(mode==='direct'?!['width','thickness','count','peWidth','peThickness','peCount','density'].includes(id):id!=='unitWeight'));}
 export function parameterSource(kind,sheet,row,id){
@@ -140,4 +152,46 @@ export function equationOperandLabels(kind,mode,label){
  '可调铜价差':['施工月均铜价','不可调边界'],
  '调差金额':['铜消耗量','可调铜价差']
  }[label]||[];
+}
+
+// Old sheets remain in place; extra worksheets keep independent defaults, rows and formatting.
+export function calculationWorksheets(project,kind){return [{id:'',name:project.calculationSheets?.[kind]?.name||'工作表 1',sheet:project.calculationSheets?.[kind]||emptySheet(kind)},...(project.calculationWorksheets||[]).filter(s=>s.kind===kind).map(sheet=>({id:sheet.id,name:sheet.name,sheet}))];}
+export function findCalculationSheet(project,kind,worksheetId=''){return worksheetId?(project.calculationWorksheets||[]).find(s=>s.id===worksheetId&&s.kind===kind):project.calculationSheets?.[kind];}
+export function editCalculationSheet(project,kind,worksheetId,fn){
+ if(!specs[kind])throw Error('计算工具类型无效');
+ let sheet=findCalculationSheet(project,kind,worksheetId);
+ if(!sheet){if(worksheetId)throw Error('工作表不存在，请重新选择');project.calculationSheets??={};sheet=project.calculationSheets[kind]=emptySheet(kind);}
+ fn(sheet);
+}
+function worksheetName(project,kind,name,except){
+ const clean=name.trim();if(!clean||clean.length>60)throw Error('工作表名称须为 1–60 个字符');
+ if(calculationWorksheets(project,kind).some(s=>s.id!==except&&s.name===clean))throw Error('当前工具已有同名工作表');
+ return clean;
+}
+export function createCalculationWorksheet(project,kind,name,sourceId=''){
+ if(!specs[kind])throw Error('计算工具类型无效');
+ if((project.calculationWorksheets||[]).length>=100)throw Error('每个项目最多新增 100 张工作表');
+ const clean=worksheetName(project,kind,name),source=findCalculationSheet(project,kind,sourceId)||emptySheet(kind);
+ const sheet={id:crypto.randomUUID(),kind,name:clean,params:{...source.params},rows:[]};
+ project.calculationWorksheets??=[];project.calculationWorksheets.push(sheet);return sheet.id;
+}
+export function renameCalculationWorksheet(project,kind,id,name){const clean=worksheetName(project,kind,name,id);editCalculationSheet(project,kind,id,s=>{s.name=clean;});}
+export function applyCalculationParameters(sheet,kind,rowIds,patch){
+ const ids=new Set(rowIds),fields=new Map(specs[kind]?.fields.map(([id,label])=>[id,label]));
+ if(!ids.size||sheet.rows.filter(r=>ids.has(r.id)).length!==ids.size)throw Error('选中行已变化，请重新选择');
+ if(!Object.keys(patch).length)throw Error('请勾选要修改的参数');
+ const clean={};
+ for(const [id,raw] of Object.entries(patch)){
+  if(id==='mode'){if(![...(kind==='bus'?['section','direct']:kind==='support'?['single','frame']:[]),null].includes(raw))throw Error('计算方式无效');clean[id]=raw;continue;}
+  if(!fields.has(id)||id==='length'&&raw===null)throw Error('参数无效');
+  if(raw===null){clean[id]=null;continue;}
+  const value=String(raw).trim().replace(/[，,]/g,''),n=Number(value);
+  if(!value||!Number.isFinite(n)||n<0)throw Error('请填写有效的'+fields.get(id));
+  if(['n1','n2','n3','count','peCount','rods'].includes(id)&&!Number.isInteger(n))throw Error('芯数 / 根数必须为整数');
+  if(['base','spacing','rods','rodWeight','steelWeight'].includes(id)&&n<=0||id==='threshold'&&n>100)throw Error(fields.get(id)+'超出有效范围');
+  clean[id]=value;
+ }
+ const next=structuredClone(sheet);
+ for(const row of next.rows){if(!ids.has(row.id))continue;for(const [id,value] of Object.entries(clean)){if(id==='length'){row.length=value;delete row.overrides.length;}else if(value===null)delete row.overrides[id];else row.overrides[id]=value;}}
+ return next;
 }
